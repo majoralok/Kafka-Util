@@ -1,0 +1,6 @@
+public class KafkaUtilException extends RuntimeException {
+
+    public KafkaUtilException(String msg) {
+        super(msg);
+    }
+}
