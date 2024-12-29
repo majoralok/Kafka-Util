@@ -1,0 +1,139 @@
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.majoralok.kafka_util.config.QueueConfig;
+import com.majoralok.kafka_util.exception.KafkaUtilException;
+import com.majoralok.kafka_util.producer.IKafkaProducer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.stereotype.Component;
+
+import java.util.Map;
+
+import static com.majoralok.kafka_util.constants.KafkaUtilConstants.ERROR_PUBLISH_MESSAGE;
+import static com.majoralok.kafka_util.constants.KafkaUtilConstants.SUCCESS_PUBLISH_MESSAGE;
+
+
+@Component
+@Import(QueueConfig.class)
+public abstract class KafkaProducer {
+    private static final Logger log = LoggerFactory.getLogger(KafkaProducer.class);
+
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    public <T> void publishToTopic(String key, T object) {
+        try {
+            publishToTopic(key, objectMapper.writeValueAsString(object));
+        } catch (Exception ex) {
+            log.error(ERROR_PUBLISH_MESSAGE, this.getTopic(), ex.getMessage());
+        }
+    }
+
+    public <T> void publishToTopic(String key, T object, Map<String, String> headerMap) {
+        try {
+            Message<?> message = MessageBuilder.withPayload(objectMapper.writeValueAsString(object))
+                    .setHeader(KafkaHeaders.TOPIC, this.getTopic())
+                    .setHeader(KafkaHeaders.KEY, key)
+                    .copyHeaders(headerMap)
+                    .build();
+            publishToTopic(message);
+        } catch (Exception ex) {
+            log.error(ERROR_PUBLISH_MESSAGE, this.getTopic(), ex.getMessage());
+        }
+    }
+
+    public <T> void publishToTopicSync(String key, T object) {
+        try {
+            publishToTopicSync(key, objectMapper.writeValueAsString(object));
+            log.info(SUCCESS_PUBLISH_MESSAGE + this.getTopic());
+        } catch (Exception ex) {
+            log.error(ERROR_PUBLISH_MESSAGE, this.getTopic(), ex.getMessage());
+        }
+    }
+
+    public <T> void publishToTopicSync(String key, T object, Map<String, String> headerMap) {
+        try {
+            Message<?> message = MessageBuilder.withPayload(objectMapper.writeValueAsString(object))
+                    .setHeader(KafkaHeaders.TOPIC, this.getTopic())
+                    .setHeader(KafkaHeaders.KEY, key)
+                    .copyHeaders(headerMap)
+                    .build();
+            publishToTopicSync(message);
+        } catch (Exception ex) {
+            log.error(ERROR_PUBLISH_MESSAGE, this.getTopic(), ex.getMessage());
+        }
+    }
+
+    public void publishToTopic(String key, String object, Map<String, String> headerMap) {
+        try {
+            Message<?> message = MessageBuilder.withPayload(objectMapper.writeValueAsString(object))
+                    .setHeader(KafkaHeaders.TOPIC, this.getTopic())
+                    .setHeader(KafkaHeaders.KEY, key)
+                    .copyHeaders(headerMap)
+                    .build();
+            publishToTopic(message);
+        } catch (Exception ex) {
+            log.error(ERROR_PUBLISH_MESSAGE, this.getTopic(), ex.getMessage());
+        }
+    }
+
+    public void publishToTopicSync(String key, String object, Map<String, String> headerMap) {
+        try {
+            Message<?> message = MessageBuilder.withPayload(objectMapper.writeValueAsString(object))
+                    .setHeader(KafkaHeaders.TOPIC, this.getTopic())
+                    .setHeader(KafkaHeaders.KEY, key)
+                    .copyHeaders(headerMap)
+                    .build();
+            publishToTopicSync(message);
+        } catch (Exception ex) {
+            log.error(ERROR_PUBLISH_MESSAGE, this.getTopic(), ex.getMessage());
+        }
+    }
+
+    public void publishToTopic(String key, String message) {
+        try {
+            kafkaTemplate.send(this.getTopic(), key, message);
+        } catch (Exception ex) {
+            log.error(ERROR_PUBLISH_MESSAGE, this.getTopic(), ex.getMessage());
+            throw new KafkaUtilException(ex.getMessage());
+        }
+    }
+
+    private void publishToTopic(Message<?> message) {
+        try {
+            kafkaTemplate.send(message);
+            log.info(SUCCESS_PUBLISH_MESSAGE + this.getTopic());
+        } catch (Exception ex) {
+            log.error(ERROR_PUBLISH_MESSAGE, this.getTopic(), ex.getMessage());
+            throw new KafkaUtilException(ex.getMessage());
+        }
+    }
+
+    public void publishToTopicSync(String key, String message) {
+        try {
+            kafkaTemplate.send(this.getTopic(), key, message).get();
+            log.info(SUCCESS_PUBLISH_MESSAGE + this.getTopic());
+        } catch (Exception ex) {
+            log.error(ERROR_PUBLISH_MESSAGE, this.getTopic(), ex.getMessage());
+            throw new KafkaUtilException(ex.getMessage());
+        }
+    }
+
+    private void publishToTopicSync(Message<?> message) {
+        try {
+            kafkaTemplate.send(message).get();
+            log.info(SUCCESS_PUBLISH_MESSAGE + this.getTopic());
+        } catch (Exception ex) {
+            log.error(ERROR_PUBLISH_MESSAGE, this.getTopic(), ex.getMessage());
+            throw new KafkaUtilException(ex.getMessage());
+        }
+    }
+}
